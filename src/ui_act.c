@@ -641,13 +641,7 @@ BarUiActCallback(BarUiActSave) {
 	system(buffer);
   sprintf (buffer, "wget \"%s\" -O ~/Music/\"%s - %s.m4a\"",selSong->audioUrl,selSong->artist,selSong->title);
 	system(buffer);
-  strcpy (buffer, "Saved song to ~/Music/");
-  strcat (buffer, selSong->artist);
-  strcat (buffer, selSong->title);
-  strcat (buffer, ".m4a\n");
-	/*strcpy (buffer, "Saved Song: ~/Music/");
-	strcat (buffer, selSong->musicId);
-	strcat (buffer, ".m4a\n");*/
+  sprintf (buffer, "Saved song to ~/Music/%s - %s.m4a\n", selSong->artist,selSong->title);
 	BarUiMsg (&app->settings, MSG_INFO, buffer);
 	BarUiActDefaultEventcmd ("songsave");
 }

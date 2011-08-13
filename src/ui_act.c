@@ -639,11 +639,15 @@ BarUiActCallback(BarUiActSave) {
 	assert (selSong != NULL);
 	sprintf (buffer, "mkdir -p Music/");
 	system(buffer);
-  sprintf (buffer, "wget \"%s\" -O Music/%s.m4a",selSong->audioUrl,selSong->musicId);
+  sprintf (buffer, "wget \"%s\" -O ~/Music/\"%s - %s.m4a\"",selSong->audioUrl,selSong->artist,selSong->title);
 	system(buffer);
-	strcpy (buffer, "Saved Song: Music/");
+  strcpy (buffer, "Saved song to ~/Music/");
+  strcat (buffer, selSong->artist);
+  strcat (buffer, selSong->title);
+  strcat (buffer, ".m4a\n");
+	/*strcpy (buffer, "Saved Song: ~/Music/");
 	strcat (buffer, selSong->musicId);
-	strcat (buffer, ".mp3\n");
+	strcat (buffer, ".m4a\n");*/
 	BarUiMsg (&app->settings, MSG_INFO, buffer);
 	BarUiActDefaultEventcmd ("songsave");
 }

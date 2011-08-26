@@ -637,11 +637,13 @@ BarUiActCallback(BarUiActSave) {
 	WaitressReturn_t wRet;
 	assert (selStation != NULL);
 	assert (selSong != NULL);
-	sprintf (buffer, "mkdir -p Music/");
+	sprintf (buffer, "mkdir -p ~/Music/");
 	system(buffer);
-  sprintf (buffer, "wget \"%s\" -O ~/Music/\"%s - %s.m4a\"",selSong->audioUrl,selSong->artist,selSong->title);
+  sprintf (buffer, "mkdir -p ~/Music/\"%s\"/",selSong->artist);
+  system(buffer);
+  sprintf (buffer, "wget \"%s\" -O ~/Music/\"%s\"/\"%s\".m4a",selSong->audioUrl,selSong->artist,selSong->title);
 	system(buffer);
-  sprintf (buffer, "Saved song to ~/Music/%s - %s.m4a\n", selSong->artist,selSong->title);
+  sprintf (buffer, "Saved song to ~/Music/%s/%s.m4a\n", selSong->artist,selSong->title);
 	BarUiMsg (&app->settings, MSG_INFO, buffer);
 	BarUiActDefaultEventcmd ("songsave");
 }

@@ -631,6 +631,7 @@ BarUiActCallback(BarUiActManageStation) {
 }
 /*	save
  */
+
 BarUiActCallback(BarUiActSave) {
 	char buffer [1000];
 	PianoReturn_t pRet;
@@ -639,11 +640,28 @@ BarUiActCallback(BarUiActSave) {
 	assert (selSong != NULL);
 	sprintf (buffer, "mkdir -p ~/Music/");
 	system(buffer);
+
+        char songpath [1000];
+        sprintf (songpath, "/home/kyle/Music/%s/%s.m4a",selSong->artist,selSong->title);
+
+        int accessvalue = access(songpath, F_OK);
+        sprintf(buffer,"access value: %d\nsongpath: %s\n", accessvalue,songpath);
+        BarUiMsg (&app->settings, MSG_INFO, buffer);
+        BarUiActDefaultEventcmd("songsave");
+
+        if (access(songpath, F_OK) != 0) {
+
+
   sprintf (buffer, "mkdir -p ~/Music/\"%s\"/",selSong->artist);
   system(buffer);
-  sprintf (buffer, "wget \"%s\" -O ~/Music/\"%s\"/\"%s\".m4a",selSong->audioUrl,selSong->artist,selSong->title);
+  sprintf (buffer, "axel -n 15 -a \"%s\" -o \"%s\"",selSong->audioUrl,songpath);
 	system(buffer);
-  sprintf (buffer, "Saved song to ~/Music/%s/%s.m4a\n", selSong->artist,selSong->title);
+  sprintf (buffer, "Saved song to %s\n", songpath);
 	BarUiMsg (&app->settings, MSG_INFO, buffer);
 	BarUiActDefaultEventcmd ("songsave");
+        } else {
+            sprintf(buffer, "Song already exists: %s\n", songpath);
+            BarUiMsg (&app->settings, MSG_INFO, buffer);
+            BarUiActDefaultEventcmd ("songsave");
+        }
 }

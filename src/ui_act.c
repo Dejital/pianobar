@@ -643,7 +643,7 @@ BarUiActCallback(BarUiActSave) {
 	system(buffer);
 
         char *home;
-        home = getenv("HOME")
+        home = getenv("HOME");
         char songpath [1000];
         sprintf (songpath, "%s/Music/%s/%s.m4a",home,selSong->artist,selSong->title);
 

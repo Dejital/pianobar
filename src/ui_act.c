@@ -27,6 +27,7 @@ THE SOFTWARE.
 #include <unistd.h>
 #include <pthread.h>
 #include <assert.h>
+#include <stdlib.h>
 
 #include "ui.h"
 #include "ui_readline.h"
@@ -641,24 +642,25 @@ BarUiActCallback(BarUiActSave) {
 	sprintf (buffer, "mkdir -p ~/Music/");
 	system(buffer);
 
+        char *home;
+        home = getenv("HOME")
         char songpath [1000];
-        sprintf (songpath, "/home/kyle/Music/%s/%s.m4a",selSong->artist,selSong->title);
+        sprintf (songpath, "%s/Music/%s/%s.m4a",home,selSong->artist,selSong->title);
 
-        int accessvalue = access(songpath, F_OK);
-        sprintf(buffer,"access value: %d\nsongpath: %s\n", accessvalue,songpath);
-        BarUiMsg (&app->settings, MSG_INFO, buffer);
-        BarUiActDefaultEventcmd("songsave");
+//        int accessvalue = access(songpath, F_OK);
+//        sprintf(buffer,"access value: %d\nsongpath: %s\n", accessvalue,songpath);
+//        BarUiMsg (&app->settings, MSG_INFO, buffer);
+//        BarUiActDefaultEventcmd("songsave");
 
         if (access(songpath, F_OK) != 0) {
 
-
-  sprintf (buffer, "mkdir -p ~/Music/\"%s\"/",selSong->artist);
-  system(buffer);
-  sprintf (buffer, "axel -n 15 -a \"%s\" -o \"%s\"",selSong->audioUrl,songpath);
-	system(buffer);
-  sprintf (buffer, "Saved song to %s\n", songpath);
-	BarUiMsg (&app->settings, MSG_INFO, buffer);
-	BarUiActDefaultEventcmd ("songsave");
+            sprintf (buffer, "mkdir -p ~/Music/\"%s\"/",selSong->artist);
+                    system(buffer);
+            sprintf (buffer, "axel -n 15 -a \"%s\" -o \"%s\"",selSong->audioUrl,songpath);
+                    system(buffer);
+            sprintf (buffer, "Saved song to %s\n", songpath);
+                    BarUiMsg (&app->settings, MSG_INFO, buffer);
+                    BarUiActDefaultEventcmd ("songsave");
         } else {
             sprintf(buffer, "Song already exists: %s\n", songpath);
             BarUiMsg (&app->settings, MSG_INFO, buffer);

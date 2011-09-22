@@ -659,7 +659,7 @@ BarUiActCallback(BarUiActSave) {
             sprintf (buffer, "mkdir -p ~/Music/\"%s\"/",selSong->artist);
                     system(buffer);
 //            sprintf (buffer, "curl \"%s\" -o \"%s\"",selSong->audioUrl,songpath);
-            sprint (buffer, "axel -n 15 \"%s\" -o \"%s\"",selSong->audioUrl,songpath);
+            sprintf (buffer, "axel -n 15 \"%s\" -o \"%s\"",selSong->audioUrl,songpath);
                     system(buffer);
             sprintf (buffer, "Saved song to %s\n", songpath);
                     BarUiMsg (&app->settings, MSG_INFO, buffer);

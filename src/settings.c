@@ -91,6 +91,8 @@ void BarSettingsDestroy (BarSettings_t *settings) {
 	free (settings->atIcon);
 	free (settings->npSongFormat);
 	free (settings->npStationFormat);
+	free (settings->listSongFormat);
+	free (settings->fifo);
 	for (size_t i = 0; i < MSG_COUNT; i++) {
 		free (settings->msgFormat[i].prefix);
 		free (settings->msgFormat[i].postfix);
@@ -126,6 +128,9 @@ void BarSettingsRead (BarSettings_t *settings) {
 	settings->atIcon = strdup (" @ ");
 	settings->npSongFormat = strdup ("\"%t\" by \"%a\" on \"%l\"%r%@%s");
 	settings->npStationFormat = strdup ("Station \"%n\" (%i)");
+	settings->listSongFormat = strdup ("%i) %a - %t%r");
+	settings->fifo = malloc (PATH_MAX * sizeof (*settings->fifo));
+	BarGetXdgConfigDir (PACKAGE "/ctl", settings->fifo, PATH_MAX);
 
 	settings->msgFormat[MSG_NONE].prefix = NULL;
 	settings->msgFormat[MSG_NONE].postfix = NULL;
@@ -153,10 +158,11 @@ void BarSettingsRead (BarSettings_t *settings) {
 
 	/* read config file */
 	while (1) {
-		int scanRet = fscanf (configfd, "%255s = %255[^\n]", key, val);
+		char lwhite, rwhite;
+		int scanRet = fscanf (configfd, "%255s%c=%c%255[^\n]", key, &lwhite, &rwhite, val);
 		if (scanRet == EOF) {
 			break;
-		} else if (scanRet != 2) {
+		} else if (scanRet != 4 || lwhite != ' ' || rwhite != ' ') {
 			/* invalid config line */
 			continue;
 		}
@@ -227,6 +233,12 @@ void BarSettingsRead (BarSettings_t *settings) {
 		} else if (streq ("format_nowplaying_station", key)) {
 			free (settings->npStationFormat);
 			settings->npStationFormat = strdup (val);
+		} else if (streq ("format_list_song", key)) {
+			free (settings->listSongFormat);
+			settings->listSongFormat = strdup (val);
+		} else if (streq ("fifo", key)) {
+			free (settings->fifo);
+			settings->fifo = strdup (val);
 		} else if (strncmp (formatMsgPrefix, key,
 				strlen (formatMsgPrefix)) == 0) {
 			static const char *mapping[] = {"none", "info", "nowplaying",

@@ -1,3 +1,9 @@
+.\" Continuation line for .TP header.
+.de TQ
+.  br
+.  ns
+.  TP \\$1\" no doublequotes around argument!
+..
 .TH pianobar 1
 
 .SH NAME
@@ -177,6 +183,46 @@ File that is executed when event occurs. See section
 .B EVENTCMD
 
 .TP
+.B fifo = /home/user/.config/pianobar/ctl
+Location of control fifo. Defaults to $XDG_CONFIG_HOME/pianobar/ctl (which is
+usually the value above). See section
+.B REMOTE CONTROL
+
+.TP
+.B format_list_song = %i) %a - %t%r
+Available format characters:
+
+.B %i
+Song number
+
+.B %a
+Song artist
+
+.B %t
+Song title
+
+.B %r
+Rating icon
+
+.TP
+.B format_msg_none = %s
+.TQ
+.B format_msg_info = (i) %s
+.TQ
+.B format_msg_nowplaying = |>  %s
+.TQ
+.B format_msg_time = #   %s
+.TQ
+.B format_msg_err = /!\\\\ %s
+.TQ
+.B format_msg_question = [?] %s
+.TQ
+.B format_msg_list = \\t%s
+Message format strings.
+.B %s
+is replaced with the actual message.
+
+.TP
 .B format_nowplaying_song = \[dq]%t\[dq] by \[dq]%a\[dq] on \[dq]%l\[dq]%r%@%s
 Now playing song message format. Available format characters are:
 
@@ -211,24 +257,6 @@ Station name
 
 .B %i
 Station id
-
-.TP
-.B format_msg_none = %s
-.TQ
-.B format_msg_info = (i) %s
-.TQ
-.B format_msg_nowplaying = |>  %s
-.TQ
-.B format_msg_time = #   %s
-.TQ
-.B format_msg_err = /!\\\\ %s
-.TQ
-.B format_msg_question = [?] %s
-.TQ
-.B format_msg_list = \\t%s
-Message format strings.
-.B %s
-is replaced with the actual message.
 
 .TP
 .B history = 5
@@ -267,8 +295,8 @@ can be controlled through a fifo. You have to create it yourself by executing
 
  mkfifo ~/.config/pianobar/ctl
 
-Adjust the path if you set up a $XDG_CONFIG_HOME. Afterwards you can write
-commands directly into the fifo. Example (next song):
+Adjust the path if you set up a $XDG_CONFIG_HOME or changed the fifo setting.
+Afterwards you can write commands directly into the fifo. Example (next song):
 
  echo -n 'n' > ~/.config/pianobar/ctl
 

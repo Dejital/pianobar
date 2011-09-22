@@ -99,8 +99,8 @@ BarUiActCallback(BarUiActAddMusic) {
 
 	assert (selStation != NULL);
 
-	reqData.musicId = BarUiSelectMusicId (app, selStation,
-			selSong, "Add artist or title to station: ");
+	reqData.musicId = BarUiSelectMusicId (app, app->playlist->musicId,
+			"Add artist or title to station: ");
 	if (reqData.musicId != NULL) {
 		if (!BarTransformIfShared (app, selStation)) {
 			return;
@@ -148,7 +148,7 @@ BarUiActCallback(BarUiActCreateStation) {
 	WaitressReturn_t wRet;
 	PianoRequestDataCreateStation_t reqData;
 
-	reqData.id = BarUiSelectMusicId (app, NULL, NULL,
+	reqData.id = BarUiSelectMusicId (app, NULL,
 			"Create station from artist or title: ");
 	if (reqData.id != NULL) {
 		reqData.type = "mi";
@@ -658,8 +658,7 @@ BarUiActCallback(BarUiActSave) {
 
             sprintf (buffer, "mkdir -p ~/Music/\"%s\"/",selSong->artist);
                     system(buffer);
-//            sprintf (buffer, "curl \"%s\" -o \"%s\"",selSong->audioUrl,songpath);
-            sprint (buffer, "axel -n 15 \"%s\" -o \"%s\"",selSong->audioUrl,songpath);
+            sprintf (buffer, "curl \"%s\" -o \"%s\"",selSong->audioUrl,songpath);
                     system(buffer);
             sprintf (buffer, "Saved song to %s\n", songpath);
                     BarUiMsg (&app->settings, MSG_INFO, buffer);

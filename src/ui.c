@@ -466,11 +466,13 @@ PianoArtist_t *BarUiSelectArtist (BarApp_t *app, PianoArtist_t *startArtist) {
 
 /*	search music: query, search request, return music id
  *	@param app handle
- *	@param allow seed suggestions if != NULL
+ *	@param seed suggestion station
+ *	@param seed suggestion musicid
  *	@param prompt string
  *	@return musicId or NULL on abort/error
  */
-char *BarUiSelectMusicId (BarApp_t *app, char *similarToId, const char *msg) {
+char *BarUiSelectMusicId (BarApp_t *app, PianoStation_t *station,
+		PianoSong_t *similarSong, const char *msg) {
 	char *musicId = NULL;
 	char lineBuf[100], selectBuf[2];
 	PianoSearchResult_t searchResult;
@@ -480,12 +482,14 @@ char *BarUiSelectMusicId (BarApp_t *app, char *similarToId, const char *msg) {
 	BarUiMsg (&app->settings, MSG_QUESTION, msg);
 	if (BarReadlineStr (lineBuf, sizeof (lineBuf), &app->input,
 			BAR_RL_DEFAULT) > 0) {
-		if (strcmp ("?", lineBuf) == 0 && similarToId != NULL) {
+		if (strcmp ("?", lineBuf) == 0 && station != NULL &&
+				similarSong != NULL) {
 			PianoReturn_t pRet;
 			WaitressReturn_t wRet;
 			PianoRequestDataGetSeedSuggestions_t reqData;
 
-			reqData.musicId = similarToId;
+			reqData.station = station;
+			reqData.musicId = similarSong->musicId;
 			reqData.max = 20;
 
 			BarUiMsg (&app->settings, MSG_INFO, "Receiving suggestions... ");
@@ -723,6 +727,20 @@ inline void BarUiPrintSong (const BarSettings_t *settings,
 	BarUiMsg (settings, MSG_PLAYING, outstr);
 }
 
+/*	Incremets two digit ASCII counter
+ */
+static void BarUiIncDigits (char digits[3]) {
+	++digits[1];
+	if (digits[1] == ':') {
+		digits[1] = '0';
+		digits[0] |= 0x30;
+		++digits[0];
+		if (digits[0] == ':') {
+			digits[0] = ' ';
+		}
+	}
+}
+
 /*	Print list of songs
  *	@param pianobar settings
  *	@param linked list of songs
@@ -732,18 +750,25 @@ inline void BarUiPrintSong (const BarSettings_t *settings,
 size_t BarUiListSongs (const BarSettings_t *settings,
 		const PianoSong_t *song, const char *filter) {
 	size_t i = 0;
+	char digits[3] = " 0";
 
 	while (song != NULL) {
 		if (filter == NULL ||
 				(filter != NULL && (BarStrCaseStr (song->artist, filter) != NULL ||
 				BarStrCaseStr (song->title, filter) != NULL))) {
-			BarUiMsg (settings, MSG_LIST, "%2lu) %s - %s %s%s\n", i, song->artist,
-					song->title,
-					(song->rating == PIANO_RATE_LOVE) ? settings->loveIcon : "",
-					(song->rating == PIANO_RATE_BAN) ? settings->banIcon : "");
+			char outstr[512];
+			const char *vals[] = {digits, song->artist, song->title,
+					(song->rating == PIANO_RATE_LOVE) ? settings->loveIcon :
+					((song->rating == PIANO_RATE_BAN) ? settings->banIcon : "")};
+
+			BarUiCustomFormat (outstr, sizeof (outstr), settings->listSongFormat,
+					"iatr", vals);
+			BarUiAppendNewline (outstr, sizeof (outstr));
+			BarUiMsg (settings, MSG_LIST, outstr);
 		}
-		song = song->next;
 		i++;
+		BarUiIncDigits (digits);
+		song = song->next;
 	}
 
 	return i;
@@ -787,17 +812,19 @@ void BarUiStartEventCmd (const BarSettings_t *settings, const char *type,
 		BarUiMsg (settings, MSG_ERR, "Cannot fork eventcmd. (%s)\n", strerror (errno));
 	} else {
 		/* parent */
-		int status, printfret;
-		char pipeBuf[1024];
+		int status;
 		PianoStation_t *songStation = NULL;
+		FILE *pipeWriteFd;
 
 		close (pipeFd[0]);
+
+		pipeWriteFd = fdopen (pipeFd[1], "w");
 
 		if (curSong != NULL && stations != NULL && curStation->isQuickMix) {
 			songStation = PianoFindStationById (stations, curSong->stationId);
 		}
 
-		printfret = snprintf (pipeBuf, sizeof (pipeBuf),
+		fprintf (pipeWriteFd,
 				"artist=%s\n"
 				"title=%s\n"
 				"album=%s\n"
@@ -827,9 +854,6 @@ void BarUiStartEventCmd (const BarSettings_t *settings, const char *type,
 				curSong == NULL ? PIANO_RATE_NONE : curSong->rating,
 				curSong == NULL ? "" : curSong->detailUrl
 				);
-		assert (printfret < sizeof (pipeBuf));
-
-		write (pipeFd[1], pipeBuf, strlen (pipeBuf));
 
 		if (stations != NULL) {
 			/* send station list */
@@ -839,23 +863,21 @@ void BarUiStartEventCmd (const BarSettings_t *settings, const char *type,
 					settings->sortOrder);
 			assert (sortedStations != NULL);
 
-			snprintf (pipeBuf, sizeof (pipeBuf), "stationCount=%zd\n", stationCount);
-			write (pipeFd[1], pipeBuf, strlen (pipeBuf));
+			fprintf (pipeWriteFd, "stationCount=%zd\n", stationCount);
 
 			for (size_t i = 0; i < stationCount; i++) {
 				const PianoStation_t *currStation = sortedStations[i];
-				printfret = snprintf (pipeBuf, sizeof (pipeBuf), "station%zd=%s\n", i,
+				fprintf (pipeWriteFd, "station%zd=%s\n", i,
 						currStation->name);
-				assert (printfret < sizeof (pipeBuf));
-				write (pipeFd[1], pipeBuf, strlen (pipeBuf));
 			}
 			free (sortedStations);
 		} else {
-			const char *msg = "stationCount=0\n";
-			write (pipeFd[1], msg, strlen (msg));
+			const char * const msg = "stationCount=0\n";
+			fwrite (msg, sizeof (*msg), strlen (msg), pipeWriteFd);
 		}
 	
-		close (pipeFd[1]);
+		/* closes pipeFd[1] as well */
+		fclose (pipeWriteFd);
 		/* wait to get rid of the zombie */
 		waitpid (chld, &status, 0);
 	}

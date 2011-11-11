@@ -333,13 +333,13 @@ static PianoStation_t **BarSortedStations (PianoStation_t *unsortedStations,
  *	@param called if input was not a number
  *	@return pointer to selected station or NULL
  */
-PianoStation_t *BarUiSelectStation (BarApp_t *app, const char *prompt,
-		BarUiSelectStationCallback_t callback) {
+PianoStation_t *BarUiSelectStation (BarApp_t *app, PianoStation_t *stations,
+		const char *prompt, BarUiSelectStationCallback_t callback) {
 	PianoStation_t **sortedStations = NULL, *retStation = NULL;
 	size_t stationCount, i;
 	char buf[100];
 
-	if (app->ph.stations == NULL) {
+	if (stations == NULL) {
 		BarUiMsg (&app->settings, MSG_ERR, "No station available.\n");
 		return NULL;
 	}
@@ -347,7 +347,7 @@ PianoStation_t *BarUiSelectStation (BarApp_t *app, const char *prompt,
 	memset (buf, 0, sizeof (buf));
 
 	/* sort and print stations */
-	sortedStations = BarSortedStations (app->ph.stations, &stationCount,
+	sortedStations = BarSortedStations (stations, &stationCount,
 			app->settings.sortOrder);
 
 	do {
@@ -727,20 +727,6 @@ inline void BarUiPrintSong (const BarSettings_t *settings,
 	BarUiMsg (settings, MSG_PLAYING, outstr);
 }
 
-/*	Incremets two digit ASCII counter
- */
-static void BarUiIncDigits (char digits[3]) {
-	++digits[1];
-	if (digits[1] == ':') {
-		digits[1] = '0';
-		digits[0] |= 0x30;
-		++digits[0];
-		if (digits[0] == ':') {
-			digits[0] = ' ';
-		}
-	}
-}
-
 /*	Print list of songs
  *	@param pianobar settings
  *	@param linked list of songs
@@ -750,7 +736,7 @@ static void BarUiIncDigits (char digits[3]) {
 size_t BarUiListSongs (const BarSettings_t *settings,
 		const PianoSong_t *song, const char *filter) {
 	size_t i = 0;
-	char digits[3] = " 0";
+	char digits[4];
 
 	while (song != NULL) {
 		if (filter == NULL ||
@@ -761,13 +747,13 @@ size_t BarUiListSongs (const BarSettings_t *settings,
 					(song->rating == PIANO_RATE_LOVE) ? settings->loveIcon :
 					((song->rating == PIANO_RATE_BAN) ? settings->banIcon : "")};
 
+			snprintf (digits, sizeof (digits) / sizeof (*digits), "%2zu", i);
 			BarUiCustomFormat (outstr, sizeof (outstr), settings->listSongFormat,
 					"iatr", vals);
 			BarUiAppendNewline (outstr, sizeof (outstr));
 			BarUiMsg (settings, MSG_LIST, outstr);
 		}
 		i++;
-		BarUiIncDigits (digits);
 		song = song->next;
 	}
 

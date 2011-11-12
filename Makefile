@@ -85,17 +85,20 @@ else
 	LIBMAD_LDFLAGS=-lmad
 endif
 
+LIBGNUTLS_CFLAGS=
+LIBGNUTLS_LDFLAGS=-lgnutls
+
 # build pianobar
 ifeq (${DYNLINK},1)
 pianobar: ${PIANOBAR_OBJ} ${PIANOBAR_HDR} libpiano.so.0
 	${CC} -o $@ ${PIANOBAR_OBJ} ${LDFLAGS} -lao -lpthread -lm -L. -lpiano \
-			${LIBFAAD_LDFLAGS} ${LIBMAD_LDFLAGS}
+			${LIBFAAD_LDFLAGS} ${LIBMAD_LDFLAGS} ${LIBGNUTLS_LDFLAGS}
 else
 pianobar: ${PIANOBAR_OBJ} ${PIANOBAR_HDR} ${LIBPIANO_OBJ} ${LIBWAITRESS_OBJ} \
 		${LIBWAITRESS_HDR} ${LIBEZXML_OBJ} ${LIBEZXML_HDR}
 	${CC} ${CFLAGS} ${LDFLAGS} ${PIANOBAR_OBJ} ${LIBPIANO_OBJ} \
 			${LIBWAITRESS_OBJ} ${LIBEZXML_OBJ} -lao -lpthread -lm \
-			${LIBFAAD_LDFLAGS} ${LIBMAD_LDFLAGS} -o $@
+			${LIBFAAD_LDFLAGS} ${LIBMAD_LDFLAGS} ${LIBGNUTLS_LDFLAGS} -o $@
 endif
 
 # build shared and static libpiano
@@ -112,7 +115,7 @@ libpiano.so.0: ${LIBPIANO_RELOBJ} ${LIBPIANO_HDR} ${LIBWAITRESS_RELOBJ} \
 %.o: %.c
 	${CC} ${CFLAGS} -I ${LIBPIANO_INCLUDE} -I ${LIBWAITRESS_INCLUDE} \
 			-I ${LIBEZXML_INCLUDE} ${LIBFAAD_CFLAGS} \
-			${LIBMAD_CFLAGS} -c -o $@ $<
+			${LIBMAD_CFLAGS} ${LIBGNUTLS_CFLAGS} -c -o $@ $<
 
 # create position independent code (for shared libraries)
 %.lo: %.c
@@ -131,7 +134,7 @@ debug: CFLAGS=-Wall -pedantic -ggdb
 
 waitress-test: CFLAGS+= -DTEST
 waitress-test: ${LIBWAITRESS_OBJ}
-	${CC} ${LDFLAGS} ${LIBWAITRESS_OBJ} -o waitress-test
+	${CC} ${LDFLAGS} ${LIBWAITRESS_OBJ} ${LIBGNUTLS_LDFLAGS} -o waitress-test
 
 test: waitress-test
 	./waitress-test

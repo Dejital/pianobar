@@ -338,11 +338,8 @@ int main (int argc, char **argv) {
 
 	/* init some things */
 	ao_initialize ();
+	gnutls_global_init ();
 	PianoInit (&app.ph);
-
-	WaitressInit (&app.waith);
-	app.waith.url.host = strdup (PIANO_RPC_HOST);
-	app.waith.url.port = strdup (PIANO_RPC_PORT);
 
 	BarSettingsInit (&app.settings);
 	BarSettingsRead (&app.settings);
@@ -356,6 +353,11 @@ int main (int argc, char **argv) {
 				"Press %c for a list of commands.\n",
 				app.settings.keys[BAR_KS_HELP]);
 	}
+
+	WaitressInit (&app.waith);
+	app.waith.url.host = strdup (PIANO_RPC_HOST);
+	app.waith.url.tls = true;
+	app.waith.tlsFingerprint = app.settings.tlsFingerprint;
 
 	/* init fds */
 	FD_ZERO(&app.input.set);
@@ -383,7 +385,9 @@ int main (int argc, char **argv) {
 	PianoDestroy (&app.ph);
 	PianoDestroyPlaylist (app.songHistory);
 	PianoDestroyPlaylist (app.playlist);
+	WaitressFree (&app.waith);
 	ao_shutdown();
+	gnutls_global_deinit ();
 	BarSettingsDestroy (&app.settings);
 
 	/* restore terminal attributes, zsh doesn't need this, bash does... */

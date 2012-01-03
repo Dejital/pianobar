@@ -235,16 +235,16 @@ int BarUiPianoCall (BarApp_t * const app, PianoRequestType_t type,
 /*	Station sorting functions */
 
 static inline int BarStationQuickmix01Cmp (const void *a, const void *b) {
-	const PianoStation_t *stationA = *((PianoStation_t **) a),
-			*stationB = *((PianoStation_t **) b);
+	const PianoStation_t *stationA = *((PianoStation_t * const *) a),
+			*stationB = *((PianoStation_t * const *) b);
 	return stationA->isQuickMix - stationB->isQuickMix;
 }
 
 /*	sort by station name from a to z, case insensitive
  */
 static inline int BarStationNameAZCmp (const void *a, const void *b) {
-	const PianoStation_t *stationA = *((PianoStation_t **) a),
-			*stationB = *((PianoStation_t **) b);
+	const PianoStation_t *stationA = *((PianoStation_t * const *) a),
+			*stationB = *((PianoStation_t * const *) b);
 	return strcasecmp (stationA->name, stationB->name);
 }
 
@@ -566,9 +566,6 @@ void BarStationFromGenre (BarApp_t *app) {
 
 	/* receive genre stations list if not yet available */
 	if (app->ph.genreStations == NULL) {
-		PianoReturn_t pRet;
-		WaitressReturn_t wRet;
-
 		BarUiMsg (&app->settings, MSG_INFO, "Receiving genre stations... ");
 		if (!BarUiPianoCall (app, PIANO_REQUEST_GET_GENRE_STATIONS, NULL,
 				&pRet, &wRet)) {
@@ -584,16 +581,19 @@ void BarStationFromGenre (BarApp_t *app) {
 		i++;
 		curCat = curCat->next;
 	}
-	/* select category or exit */
-	BarUiMsg (&app->settings, MSG_QUESTION, "Select category: ");
-	if (BarReadlineInt (&i, &app->input) == 0) {
-		return;
-	}
-	curCat = app->ph.genreStations;
-	while (curCat != NULL && i > 0) {
-		curCat = curCat->next;
-		i--;
-	}
+
+	do {
+		/* select category or exit */
+		BarUiMsg (&app->settings, MSG_QUESTION, "Select category: ");
+		if (BarReadlineInt (&i, &app->input) == 0) {
+			return;
+		}
+		curCat = app->ph.genreStations;
+		while (curCat != NULL && i > 0) {
+			curCat = curCat->next;
+			i--;
+		}
+	} while (curCat == NULL);
 	
 	/* print all available stations */
 	curGenre = curCat->genres;
@@ -603,15 +603,19 @@ void BarStationFromGenre (BarApp_t *app) {
 		i++;
 		curGenre = curGenre->next;
 	}
-	BarUiMsg (&app->settings, MSG_QUESTION, "Select genre: ");
-	if (BarReadlineInt (&i, &app->input) == 0) {
-		return;
-	}
-	curGenre = curCat->genres;
-	while (curGenre != NULL && i > 0) {
-		curGenre = curGenre->next;
-		i--;
-	}
+
+	do {
+		BarUiMsg (&app->settings, MSG_QUESTION, "Select genre: ");
+		if (BarReadlineInt (&i, &app->input) == 0) {
+			return;
+		}
+		curGenre = curCat->genres;
+		while (curGenre != NULL && i > 0) {
+			curGenre = curGenre->next;
+			i--;
+		}
+	} while (curGenre == NULL);
+
 	/* create station */
 	BarUiMsg (&app->settings, MSG_INFO, "Adding shared station \"%s\"... ", curGenre->name);
 	reqData.id = curGenre->musicId;
@@ -626,7 +630,7 @@ void BarStationFromGenre (BarApp_t *app) {
  *	@param format characters
  *	@param replacement for each given format character
  */
-void BarUiCustomFormat (char *dest, size_t destSize, const char *format,
+static void BarUiCustomFormat (char *dest, size_t destSize, const char *format,
 		const char *formatChars, const char **formatVals) {
 	bool haveFormatChar = false;
 

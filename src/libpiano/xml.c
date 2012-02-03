@@ -94,6 +94,10 @@ static void PianoXmlIsFaultCb (const char *key, const ezxml_t value,
 						*ret = PIANO_RET_QUICKMIX_NOT_PLAYABLE;
 					} else if (strcmp ("REMOVING_TOO_MANY_SEEDS", matchStart) == 0) {
 						*ret = PIANO_RET_REMOVING_TOO_MANY_SEEDS;
+					} else if (strcmp ("EXCESSIVE_ACTIVITY", matchStart) == 0) {
+						*ret = PIANO_RET_EXCESSIVE_ACTIVITY;
+					} else if (strcmp ("DAILY_SKIP_LIMIT_REACHED", matchStart) == 0) {
+						*ret = PIANO_RET_DAILY_SKIP_LIMIT_REACHED;
 					} else {
 						*ret = PIANO_RET_ERR;
 						printf (PACKAGE ": Unknown error %s in %s\n",
@@ -254,7 +258,7 @@ static void PianoXmlParsePlaylistCb (const char *key, const ezxml_t value,
 		/* don't try to decrypt if string is too short (=> invalid memory
 		 * reads/writes) */
 		if (valueStrN > urlTailN &&
-				(urlTail = PianoDecryptString (urlTailCrypted)) != NULL) {
+				(urlTail = PianoDecryptString (urlTailCrypted, NULL)) != NULL) {
 			if ((song->audioUrl = calloc (valueStrN + 1,
 					sizeof (*song->audioUrl))) != NULL) {
 				memcpy (song->audioUrl, valueStr, valueStrN - urlTailN);

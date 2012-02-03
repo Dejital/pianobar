@@ -236,6 +236,8 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 	assert (req != NULL);
 
 	req->type = type;
+	/* no tls by default */
+	req->secure = false;
 
 	switch (req->type) {
 		case PIANO_REQUEST_LOGIN: {
@@ -256,6 +258,8 @@ PianoReturn_t PianoRequest (PianoHandle_t *ph, PianoRequest_t *req,
 
 				case 1: {
 					char *xmlencodedPassword = NULL;
+
+					req->secure = true;
 
 					/* username == email address does not contain &,<,>," */
 					if ((xmlencodedPassword =
@@ -896,24 +900,23 @@ PianoReturn_t PianoResponse (PianoHandle_t *ph, PianoRequest_t *req) {
 
 					/* abusing parseNarrative; has same xml structure */
 					ret = PianoXmlParseNarrative (req->responseData, &cryptedTimestamp);
-					if (cryptedTimestamp != NULL) {
+					if (ret == PIANO_RET_OK && cryptedTimestamp != NULL) {
 						unsigned long timestamp = 0;
-						time_t realTimestamp = time (NULL);
-						char *decryptedTimestamp = NULL, *decryptedPos = NULL;
-						unsigned char i = 4;
+						const time_t realTimestamp = time (NULL);
+						char *decryptedTimestamp = NULL;
+						size_t decryptedSize;
 
-						if ((decryptedTimestamp = PianoDecryptString (cryptedTimestamp)) != NULL) {
-							decryptedPos = decryptedTimestamp;
-							/* skip four bytes garbage? at beginning */
-							while (i-- > 0 && *decryptedPos++ != '\0');
-							timestamp = strtoul (decryptedPos, NULL, 0);
+						ret = PIANO_RET_ERR;
+						if ((decryptedTimestamp = PianoDecryptString (cryptedTimestamp,
+								&decryptedSize)) != NULL && decryptedSize > 4) {
+							/* skip four bytes garbage(?) at beginning */
+							timestamp = strtoul (decryptedTimestamp+4, NULL, 0);
 							ph->timeOffset = realTimestamp - timestamp;
-
-							free (decryptedTimestamp);
+							ret = PIANO_RET_CONTINUE_REQUEST;
 						}
-						free (cryptedTimestamp);
+						free (decryptedTimestamp);
 					}
-					ret = PIANO_RET_CONTINUE_REQUEST;
+					free (cryptedTimestamp);
 					++reqData->step;
 					break;
 				}
@@ -1224,6 +1227,14 @@ const char *PianoErrorToStr (PianoReturn_t ret) {
 
 		case PIANO_RET_REMOVING_TOO_MANY_SEEDS:
 			return "Last seed cannot be removed.";
+			break;
+
+		case PIANO_RET_EXCESSIVE_ACTIVITY:
+			return "Excessive activity.";
+			break;
+
+		case PIANO_RET_DAILY_SKIP_LIMIT_REACHED:
+			return "Daily skip limit reached.";
 			break;
 
 		default:

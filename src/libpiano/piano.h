@@ -24,6 +24,8 @@ THE SOFTWARE.
 #ifndef _PIANO_H
 #define _PIANO_H
 
+#include <stdbool.h>
+
 /* this is our public API; don't expect this api to be stable as long as
  * pandora does not provide a stable api
  * all strings _must_ be utf-8 encoded. i won't care, but pandora does. so
@@ -152,6 +154,7 @@ typedef enum {
 
 typedef struct PianoRequest {
 	PianoRequestType_t type;
+	bool secure;
 	void *data;
 	char urlPath[1024];
 	char *postData;
@@ -250,6 +253,8 @@ typedef enum {
 	PIANO_RET_PLAYLIST_END = 14,
 	PIANO_RET_QUICKMIX_NOT_PLAYABLE = 15,
 	PIANO_RET_REMOVING_TOO_MANY_SEEDS = 16,
+	PIANO_RET_EXCESSIVE_ACTIVITY = 17,
+	PIANO_RET_DAILY_SKIP_LIMIT_REACHED = 18,
 } PianoReturn_t;
 
 void PianoInit (PianoHandle_t *);
